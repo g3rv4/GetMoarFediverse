@@ -1,0 +1,8 @@
+.vscode/
+bin/
+obj/
+.vs/
+*.csproj.user
+launchSettings.json
+.idea/
+.DS_Store
