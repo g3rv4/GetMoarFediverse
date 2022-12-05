@@ -6,3 +6,4 @@ obj/
 launchSettings.json
 .idea/
 .DS_Store
+data/
