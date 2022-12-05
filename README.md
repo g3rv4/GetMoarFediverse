@@ -1,4 +1,4 @@
-# ImportDataAsRelay
+# GetMoarFediverse
 
 This is a small app that shows how you could use [FakeRelay](https://github.com/g3rv4/FakeRelay/) to import content into your instance that's tagged with hashtags you're interested in.
 
@@ -12,7 +12,7 @@ The easiest way is with docker compose. This `docker-compose.yml` shows how it c
 version: '2'
 services:
   importdata:
-    image: 'ghcr.io/g3rv4/importdataasrelay:latest'
+    image: 'ghcr.io/g3rv4/getmoarfediverse:latest'
     volumes:
       - '/path/to/data:/data'
 ```

@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Jil;
 
-namespace ImportDataAsRelay;
+namespace GetMoarFediverse;
 
 public class Config
 {

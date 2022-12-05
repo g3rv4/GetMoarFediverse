@@ -1,5 +1,5 @@
 ﻿using System.Collections.Concurrent;
-using ImportDataAsRelay;
+using GetMoarFediverse;
 using Jil;
 
 Config.Init(Environment.GetEnvironmentVariable("CONFIG_PATH"));
