@@ -17,43 +17,46 @@ if (!File.Exists(importedPath))
     File.WriteAllText(importedPath, "");
 }
 
-var imported = File.ReadAllLines(importedPath).ToHashSet();
+var importedList = File.ReadAllLines(importedPath).ToList();
+var imported = importedList.ToHashSet();
 var statusesToLoadBag = new ConcurrentBag<string>();
+
+var sitesTags = Config.Instance.Sites
+    .SelectMany(s => Config.Instance.Tags.Select(tag => (s.Host, tag)))
+    .Concat(Config.Instance.Sites.SelectMany(s => s.SiteSpecificTags.Select(tag => (s.Host, tag))))
+    .OrderBy(t => t.tag)
+    .ToList();
 
 ParallelOptions parallelOptions = new()
 {
     MaxDegreeOfParallelism = 8
 };
 
-await Parallel.ForEachAsync(Config.Instance.Sites, parallelOptions, async (site, _) =>
+await Parallel.ForEachAsync(sitesTags, parallelOptions, async (st, _) =>
 {
-    var tags = site.SiteSpecificTags.Concat(Config.Instance.Tags).ToList();
-    foreach (var tag in tags)
+    var (site, tag) = st;
+    Console.WriteLine($"Fetching tag #{tag} from {site}");
+    var response = await client.GetAsync($"https://{site}/tags/{tag}.json");
+    try
     {
-        Console.WriteLine($"Fetching tag #{tag} from {site.Host}");
-        var response = await client.GetAsync($"https://{site.Host}/tags/{tag}.json");
-        try
-        {
-            response.EnsureSuccessStatusCode();
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine($"Error fetching tag, status code: {response.StatusCode}. Error: {e.Message}");
-            continue;
-        }
+        response.EnsureSuccessStatusCode();
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine($"Error fetching tag, status code: {response.StatusCode}. Error: {e.Message}");
+        return;
+    }
 
-        var json = await response.Content.ReadAsStringAsync();
-        var data = JSON.Deserialize<TagResponse>(json, Options.CamelCase);
+    var json = await response.Content.ReadAsStringAsync();
+    var data = JSON.Deserialize<TagResponse>(json, Options.CamelCase);
 
-        foreach (var statusLink in data.OrderedItems.Where(i=>!imported.Contains(i)))
-        {
-            statusesToLoadBag.Add(statusLink);
-        }
+    foreach (var statusLink in data.OrderedItems.Where(i=>!imported.Contains(i)))
+    {
+        statusesToLoadBag.Add(statusLink);
     }
 });
 
 var statusesToLoad = statusesToLoadBag.ToHashSet();
-var importedOnThisRun = new List<string>();
 foreach (var statusLink in statusesToLoad)
 {
     Console.WriteLine($"Bringing in {statusLink}");
@@ -64,7 +67,7 @@ foreach (var statusLink in statusesToLoad)
 
         var res = await authClient.PostAsync("index", new FormUrlEncodedContent(content));
         res.EnsureSuccessStatusCode();
-        importedOnThisRun.Add(statusLink);
+        importedList.Add(statusLink);
     }
     catch (Exception e)
     {
@@ -72,7 +75,14 @@ foreach (var statusLink in statusesToLoad)
     }
 }
 
-File.AppendAllLines(importedPath, importedOnThisRun);
+if (importedList.Count > 1000)
+{
+    importedList = importedList
+        .Skip(importedList.Count - 1000)
+        .ToList();
+}
+
+File.WriteAllLines(importedPath, importedList);
 
 public class TagResponse
 {
