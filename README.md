@@ -17,7 +17,7 @@ services:
       - '/path/to/GetMoarFediverse/data:/data'
 ```
 
-On `/path/to/data`, you need to place a `config.json` that tells the system what you want. You could use something like this:
+On `/path/to/GetMoarFediverse/data`, you need to place a `config.json` that tells the system what you want. You could use something like this:
 
 ```
 {
