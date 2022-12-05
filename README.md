@@ -14,7 +14,7 @@ services:
   importdata:
     image: 'ghcr.io/g3rv4/getmoarfediverse:latest'
     volumes:
-      - '/path/to/data:/data'
+      - '/path/to/GetMoarFediverse/data:/data'
 ```
 
 On `/path/to/data`, you need to place a `config.json` that tells the system what you want. You could use something like this:
@@ -41,7 +41,7 @@ On `/path/to/data`, you need to place a `config.json` that tells the system what
 }
 ```
 
-Once you have that set up, you can just execute it! and it will output what's going on. You can run this on a cron!
+Once you have that set up, you can just execute it! and it will output what's going on.
 
 ```
 g3rv4@s1:~/docker/FakeRelay$ docker-compose run --rm import
@@ -51,4 +51,10 @@ Fetching tag #dotnet from hachyderm.io
 Fetching tag #csharp from mastodon.social
 Fetching tag #csharp from hachyderm.io
 Bringing in https://dotnet.social/users/mzikmund/statuses/109458968117245196
+```
+
+I'm running it as a cron every 15 minutes, doing something like this:
+
+```
+1,16,31,46 * * * * /usr/local/bin/docker-compose -f /path/to/GetMoarFediverse/docker-compose.yml run --rm import > /path/to/GetMoarFediverse/cron.log 2>&1
 ```
