@@ -44,7 +44,7 @@ On `/path/to/GetMoarFediverse/data`, you need to place a `config.json` that tell
 Once you have that set up, you can just execute it! and it will output what's going on.
 
 ```
-g3rv4@s1:~/docker/FakeRelay$ docker-compose run --rm import
+g3rv4@s1:~/docker/FakeRelay$ docker-compose run --rm importdata
 Fetching tag #dotnet from mastodon.social
 Fetching tag #hachyderm from hachyderm.io
 Fetching tag #dotnet from hachyderm.io
