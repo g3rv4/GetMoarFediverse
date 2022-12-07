@@ -33,14 +33,15 @@ public class Config
         var data = JSON.Deserialize<ConfigData>(File.ReadAllText(path));
 
         var importedPath = Path.Join(Path.GetDirectoryName(path), "imported.txt");
-        
-        Instance = new Config(importedPath, data.FakeRelayUrl, data.FakeRelayApiKey, data.Tags.ToImmutableArray(), data.ImmutableSites);
+        var apiKey = data.FakeRelayApiKey ?? Environment.GetEnvironmentVariable("FAKERELAY_APIKEY");
+
+        Instance = new Config(importedPath, data.FakeRelayUrl, apiKey, data.Tags.ToImmutableArray(), data.ImmutableSites);
     }
 
     private class ConfigData
     {
         public string FakeRelayUrl { get; set; }
-        public string FakeRelayApiKey { get; set; }
+        public string? FakeRelayApiKey { get; set; }
         public string[] Tags { get; set; }
         public InternalSiteData[]? Sites { get; set; }
 
