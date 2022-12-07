@@ -58,3 +58,9 @@ I'm running it as a cron every 15 minutes, doing something like this:
 ```
 1,16,31,46 * * * * /usr/local/bin/docker-compose -f /path/to/GetMoarFediverse/docker-compose.yml run --rm import > /path/to/GetMoarFediverse/cron.log 2>&1
 ```
+
+### What about Windows?
+
+You can run it on Docker on Windows, and set up a scheduled task. You can watch [this demo by Jeff Lindborg](https://www.youtube.com/watch?v=v73ZKtP0rzE).
+
+I could package it as an installer, and that would remove the need of Docker... would you be interested in that? Open an issue :)
