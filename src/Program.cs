@@ -36,14 +36,15 @@ await Parallel.ForEachAsync(sitesTags, parallelOptions, async (st, _) =>
 {
     var (site, tag) = st;
     Console.WriteLine($"Fetching tag #{tag} from {site}");
-    var response = await client.GetAsync($"https://{site}/tags/{tag}.json");
+    HttpResponseMessage? response = null;
     try
     {
+        response = await client.GetAsync($"https://{site}/tags/{tag}.json");
         response.EnsureSuccessStatusCode();
     }
     catch (Exception e)
     {
-        Console.WriteLine($"Error fetching tag, status code: {response.StatusCode}. Error: {e.Message}");
+        Console.WriteLine($"Error fetching tag, status code: {response?.StatusCode}. Error: {e.Message}");
         return;
     }
 
