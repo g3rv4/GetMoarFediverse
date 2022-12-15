@@ -1,0 +1,85 @@
+name: Create Release
+on:
+  push:
+    tags:
+      - v*
+jobs:
+  create-windows-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build Windows artifact
+        shell: pwsh
+        run: |
+          mkdir output
+          $outputPath = Join-Path (Pwd) output
+          $srcPath = Join-Path (Pwd) src
+          docker run -v "$($outputPath):/var/output" -v "$($srcPath):/var/src" mcr.microsoft.com/dotnet/sdk:6.0.403-alpine3.16 dotnet publish -r win-x64 --self-contained -p:PublishTrimmed=true -c Release /var/src/GetMoarFediverse.csproj -o /var/output
+      - uses: actions/upload-artifact@v3
+        with:
+          name: GetMoarFediverse.exe
+          path: output/GetMoarFediverse.exe
+
+  create-linux-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build Windows artifact
+        shell: pwsh
+        run: |
+          mkdir output
+          $outputPath = Join-Path (Pwd) output
+          $srcPath = Join-Path (Pwd) src
+          docker run -v "$($outputPath):/var/output" -v "$($srcPath):/var/src" mcr.microsoft.com/dotnet/sdk:6.0.403-alpine3.16 dotnet publish -r linux-x64 --self-contained -p:PublishTrimmed=true -c Release /var/src/GetMoarFediverse.csproj -o /var/output
+      - uses: actions/upload-artifact@v3
+        with:
+          name: GetMoarFediverse
+          path: output/GetMoarFediverse
+
+  create-docker-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # get entire git tree, required for nerdbank gitversioning
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push the Docker image
+        shell: pwsh
+        run: |
+          Push-Location src
+          $version = (nbgv get-version -f json | ConvertFrom-Json).SimpleVersion
+          Write-Host "Version $version"
+          Pop-Location
+
+          docker build . --tag ghcr.io/g3rv4/getmoarfediverse:latest --tag "ghcr.io/g3rv4/getmoarfediverse:$version"
+          docker push ghcr.io/g3rv4/getmoarfediverse:latest
+          docker push "ghcr.io/g3rv4/getmoarfediverse:$version"
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [ create-windows-artifact, create-linux-artifact ]
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: GetMoarFediverse
+          path: artifacts/GetMoarFediverse
+      - uses: actions/download-artifact@master
+        with:
+          name: GetMoarFediverse.exe
+          path: artifacts/GetMoarFediverse.exe
+      - name: Release
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
+        with:
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            artifacts/GetMoarFediverse
+            artifacts/GetMoarFediverse.exe

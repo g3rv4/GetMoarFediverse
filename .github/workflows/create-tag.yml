@@ -1,0 +1,27 @@
+name: Create Tag
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # get entire git tree, required for nerdbank gitversioning
+          ssh-key: "${{ secrets.GIT_KEY }}"
+      - name: Create a tag
+        shell: pwsh
+        run: |
+          Push-Location src
+          $version = (nbgv get-version -f json | ConvertFrom-Json).SimpleVersion
+          $version = "v$version"
+          Pop-Location
+
+          git tag $version
+          git push origin $version
