@@ -56,7 +56,7 @@ Bringing in https://dotnet.social/users/mzikmund/statuses/109458968117245196
 I'm running it as a cron every 15 minutes, doing something like this:
 
 ```
-1,16,31,46 * * * * /usr/local/bin/docker-compose -f /path/to/GetMoarFediverse/docker-compose.yml run --rm import > /path/to/GetMoarFediverse/cron.log 2>&1
+1,16,31,46 * * * * /usr/local/bin/docker-compose -f /path/to/GetMoarFediverse/docker-compose.yml run --rm importdata > /path/to/GetMoarFediverse/cron.log 2>&1
 ```
 
 ### What about Windows?
