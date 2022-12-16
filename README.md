@@ -6,18 +6,9 @@ This doesn't paginate over the tags, that means it will import up to 20 statuses
 
 ## How can I run it?
 
-The easiest way is with docker compose. This `docker-compose.yml` shows how it can be used:
+### Download a prebuilt executable
 
-```
-version: '2'
-services:
-  importdata:
-    image: 'ghcr.io/g3rv4/getmoarfediverse:latest'
-    volumes:
-      - '/path/to/GetMoarFediverse/data:/data'
-```
-
-On `/path/to/GetMoarFediverse/data`, you need to place a `config.json` that tells the system what you want. You could use something like this:
+You can download an executable for your environment [on the releases page](https://github.com/g3rv4/GetMoarFediverse/releases). In addition to that, you will need to set up a `config.json` file with your desired logic. It could be something like this:
 
 ```
 {
@@ -41,26 +32,14 @@ On `/path/to/GetMoarFediverse/data`, you need to place a `config.json` that tell
 }
 ```
 
-Once you have that set up, you can just execute it! and it will output what's going on.
+Once you have that file, all you need to run is `./GetMoarFediverse /path/to/config.json`. You can put it on a cron like this :)
 
 ```
-g3rv4@s1:~/docker/FakeRelay$ docker-compose run --rm importdata
-Fetching tag #dotnet from mastodon.social
-Fetching tag #hachyderm from hachyderm.io
-Fetching tag #dotnet from hachyderm.io
-Fetching tag #csharp from mastodon.social
-Fetching tag #csharp from hachyderm.io
-Bringing in https://dotnet.social/users/mzikmund/statuses/109458968117245196
+1,16,31,46 * * * * /path/to/GetMoarFediverse /path/to/config.json > /path/to/GetMoarFediverse/cron.log 2>&1
 ```
 
-I'm running it as a cron every 15 minutes, doing something like this:
+You will find an executable for Windows as well, which you can use on a scheduled task.
 
-```
-1,16,31,46 * * * * /usr/local/bin/docker-compose -f /path/to/GetMoarFediverse/docker-compose.yml run --rm importdata > /path/to/GetMoarFediverse/cron.log 2>&1
-```
+### You can run it on docker
 
-### What about Windows?
-
-You can run it on Docker on Windows, and set up a scheduled task. You can watch [this demo by Jeff Lindborg](https://www.youtube.com/watch?v=v73ZKtP0rzE).
-
-I could package it as an installer, and that would remove the need of Docker... would you be interested in that? Open an issue :)
+If that's what you like, you can check out [this document](docs/docker.md) with instructions.
