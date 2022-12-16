@@ -8,11 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        runtime: [ win-x64, linux-x64 ]
+        runtime: [ win-x64, linux-x64, linux-arm64, osx-x64 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Build Windows artifact
+      - name: Build artifact
         shell: pwsh
         run: |
           mkdir output
@@ -54,6 +54,14 @@ jobs:
         with:
           name: linux-x64
           path: artifacts/linux-x64
+      - uses: actions/download-artifact@master
+        with:
+          name: linux-arm64
+          path: artifacts/linux-arm64
+      - uses: actions/download-artifact@master
+        with:
+          name: osx-x64
+          path: artifacts/osx-x64
       - name: Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         with:
@@ -62,6 +70,8 @@ jobs:
           files: |
             artifacts/win-x64/*.zip
             artifacts/linux-x64/*.tgz
+            artifacts/linux-arm64/*.tgz
+            artifacts/osx-x64/*.tgz
 
   create-docker-image:
     runs-on: ubuntu-latest
