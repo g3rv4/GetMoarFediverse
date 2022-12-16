@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Jil;
+using System.Text.Json;
 
 namespace GetMoarFediverse;
 
@@ -30,8 +30,8 @@ public class Config
             return;
         }
 
-        var data = JSON.Deserialize<ConfigData>(File.ReadAllText(path));
-
+        var data = JsonSerializer.Deserialize<ConfigData>(File.ReadAllText(path), JsonContext.Default.ConfigData);
+        
         var importedPath = Path.Join(Path.GetDirectoryName(path), "imported.txt");
         var apiKey = string.IsNullOrEmpty(data.FakeRelayApiKey)
             ? Environment.GetEnvironmentVariable("FAKERELAY_APIKEY")
@@ -40,7 +40,7 @@ public class Config
         Instance = new Config(importedPath, data.FakeRelayUrl, apiKey, data.Tags.ToImmutableArray(), data.ImmutableSites);
     }
 
-    private class ConfigData
+    public class ConfigData
     {
         public string FakeRelayUrl { get; set; }
         public string? FakeRelayApiKey { get; set; }
@@ -55,8 +55,8 @@ public class Config
 
         public class InternalSiteData
         {
-            public string Host { get; private set; }
-            public string[]? SiteSpecificTags { get; private set; }
+            public string Host { get; set; }
+            public string[]? SiteSpecificTags { get; set; }
 
             public SiteData ToSiteData() =>
                 new()

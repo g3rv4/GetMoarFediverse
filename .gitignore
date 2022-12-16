@@ -7,3 +7,4 @@ launchSettings.json
 .idea/
 .DS_Store
 data/
+output/

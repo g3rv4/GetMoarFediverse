@@ -1,8 +1,13 @@
 ﻿using System.Collections.Concurrent;
+using System.Text.Json;
 using GetMoarFediverse;
-using Jil;
 
-Config.Init(Environment.GetEnvironmentVariable("CONFIG_PATH"));
+var configPath = Environment.GetEnvironmentVariable("CONFIG_PATH");
+if (args.Length == 1){
+    configPath = args[0];
+}
+
+Config.Init(configPath);
 
 var client = new HttpClient();
 var authClient = new HttpClient
@@ -49,7 +54,7 @@ await Parallel.ForEachAsync(sitesTags, parallelOptions, async (st, _) =>
     }
 
     var json = await response.Content.ReadAsStringAsync();
-    var data = JSON.Deserialize<TagResponse>(json, Options.CamelCase);
+    var data = JsonSerializer.Deserialize<TagResponse>(json, CamelCaseJsonContext.Default.TagResponse);
 
     foreach (var statusLink in data.OrderedItems.Where(i=>!imported.Contains(i)))
     {
@@ -87,5 +92,5 @@ File.WriteAllLines(importedPath, importedList);
 
 public class TagResponse
 {
-    public string[] OrderedItems { get; private set; }
+    public string[] OrderedItems { get; set; }
 }
