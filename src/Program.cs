@@ -26,11 +26,22 @@ var importedList = File.ReadAllLines(importedPath).ToList();
 var imported = importedList.ToHashSet();
 var statusesToLoadBag = new ConcurrentBag<string>();
 
-var sitesTags = Config.Instance.Sites
-    .SelectMany(s => Config.Instance.Tags.Select(tag => (s.Host, tag)))
-    .Concat(Config.Instance.Sites.SelectMany(s => s.SiteSpecificTags.Select(tag => (s.Host, tag))))
-    .OrderBy(t => t.tag)
-    .ToList();
+List<(string host, string tag)> sitesTags;
+if (string.IsNullOrEmpty(Config.Instance.MastodonPostgresConnectionString))
+{
+    sitesTags = Config.Instance.Sites
+        .SelectMany(s => Config.Instance.Tags.Select(tag => (s.Host, tag)))
+        .Concat(Config.Instance.Sites.SelectMany(s => s.SiteSpecificTags.Select(tag => (s.Host, tag))))
+        .OrderBy(t => t.tag)
+        .ToList();
+}
+else
+{
+    var tags = await MastodonConnectionHelper.GetFollowedTagsAsync();
+    sitesTags = Config.Instance.Sites
+        .SelectMany(s => tags.Select(t => (s.Host, t)))
+        .ToList();
+}
 
 ParallelOptions parallelOptions = new()
 {
@@ -54,7 +65,7 @@ await Parallel.ForEachAsync(sitesTags, parallelOptions, async (st, _) =>
     }
 
     var json = await response.Content.ReadAsStringAsync();
-    var data = JsonSerializer.Deserialize<TagResponse>(json, CamelCaseJsonContext.Default.TagResponse);
+    var data = JsonSerializer.Deserialize(json, CamelCaseJsonContext.Default.TagResponse);
 
     foreach (var statusLink in data.OrderedItems.Where(i=>!imported.Contains(i)))
     {
