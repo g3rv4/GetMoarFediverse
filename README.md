@@ -14,10 +14,7 @@ You can download an executable for your environment [on the releases page](https
 {
     "FakeRelayUrl": "https://fakerelay.gervas.io",
     "FakeRelayApiKey": "1TxL6m1Esx6tnv4EPxscvAmdQN7qSn0nKeyoM7LD8b9mz+GNfrKaHiWgiT3QcNMUA+dWLyWD8qyl1MuKJ+4uHA==",
-    "Tags": [
-        "dotnet",
-        "csharp"
-    ],
+    "Tags": [ "dotnet", "csharp" ],
     "Instances": [ "hachyderm.io", "mastodon.social" ]
 }
 ```
@@ -29,6 +26,23 @@ Once you have that file, all you need to run is `./GetMoarFediverse /path/to/con
 ```
 
 You will find an executable for Windows as well, which you can use on a scheduled task.
+
+### Have it download all the followed hashtags of your instance
+
+The previous approach works, but you need to hardcode the list of tags. That's not awesome, as you need to keep track of the hashtags you (and your other users follow).
+
+You can pass `MastodonPostgresConnectionString` with a connection string to your postgres database and GetMoarFediverse will download content for all the hashtags the users on your server follow. Here's an example:
+
+```
+{
+    "FakeRelayUrl": "https://fakerelay.gervas.io",
+    "FakeRelayApiKey": "1TxL6m1Esx6tnv4EPxscvAmdQN7qSn0nKeyoM7LD8b9m+GNfrKaHiWgiT3QcNMUA+dWLyWD8qyl1MuKJ+4uHA==",
+    "MastodonPostgresConnectionString": "Host=myserver;Username=mastodon_read;Password=password;Database=mastodon_production",
+    "Instances": [ "hachyderm.io", "mastodon.social" ]
+}
+```
+
+I wrote a quick article [here](https://g3rv4.com/2022/12/getmoarfediverse-on-multi-user-instances) about it, with instructions to create a read only user.
 
 ### You can run it on docker
 
