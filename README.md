@@ -18,17 +18,7 @@ You can download an executable for your environment [on the releases page](https
         "dotnet",
         "csharp"
     ],
-    "Sites": [
-        {
-            "Host": "hachyderm.io",
-            "SiteSpecificTags": [
-                "hachyderm"
-            ]
-        },
-        {
-            "Host": "mastodon.social"
-        }
-    ]
+    "Instances": [ "hachyderm.io", "mastodon.social" ]
 }
 ```
 
