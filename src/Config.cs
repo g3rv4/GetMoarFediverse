@@ -44,9 +44,14 @@ public class Config
         {
             throw new Exception("The api key is missing");
         }
+        
+        if (data.Sites is { Length: > 0 })
+        {
+            Console.WriteLine("Warning: Sites is deprecated, please use Instances instead");
+        }
 
         Instance = new Config(importedPath, data.FakeRelayUrl, apiKey, data.MastodonPostgresConnectionString,
-            data.Tags.ToImmutableArray(), data.ImmutableSites);
+            data.Tags.ToImmutableArray(), data.GetImmutableSites());
     }
 
     public class ConfigData
@@ -54,14 +59,26 @@ public class Config
         public string FakeRelayUrl { get; set; }
         public string? FakeRelayApiKey { get; set; }
         public string? MastodonPostgresConnectionString { get; set; }
+        public string[]? Instances { get; set; }
         public string[] Tags { get; set; }
         public InternalSiteData[]? Sites { get; set; }
 
-        public ImmutableArray<SiteData> ImmutableSites =>
-            Sites == null
+        public ImmutableArray<SiteData> GetImmutableSites()
+        {
+            // the plan is to stop supporting Sites in favor of Instances. SiteSpecificTags add complexity and 
+            // don't make sense when pulling tags from Mastodon. Also, pulling is fast and multithreaded!
+            if (Instances != null)
+            {
+                return Instances
+                    .Select(i => new SiteData { Host = i, SiteSpecificTags = ImmutableArray<string>.Empty })
+                    .ToImmutableArray();
+            }
+            
+            return Sites == null
                 ? ImmutableArray<SiteData>.Empty
                 : Sites.Select(s => s.ToSiteData())
-                       .ToImmutableArray();
+                    .ToImmutableArray();
+        }
 
         public class InternalSiteData
         {
