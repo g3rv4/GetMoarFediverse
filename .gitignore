@@ -8,3 +8,4 @@ launchSettings.json
 .DS_Store
 data/
 output/
+*.DotSettings.user
