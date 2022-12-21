@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="7.0.1" />
+    <PackageReference Include="TurnerSoftware.RobotsExclusionTools" Version="0.9.1" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using GetMoarFediverse;
+using TurnerSoftware.RobotsExclusionTools;
 
 var configPath = Environment.GetEnvironmentVariable("CONFIG_PATH");
 if (args.Length == 1){
@@ -20,6 +21,8 @@ if (Config.Instance == null)
 }
 
 var client = new HttpClient();
+client.DefaultRequestHeaders.Add("User-Agent", "GetMoarFediverse");
+
 var authClient = new HttpClient
 {
     BaseAddress = new Uri(Config.Instance.FakeRelayUrl)
@@ -32,9 +35,17 @@ if (!File.Exists(importedPath))
     File.WriteAllText(importedPath, "");
 }
 
-var importedList = File.ReadAllLines(importedPath).ToList();
-var imported = importedList.ToHashSet();
-var statusesToLoadBag = new ConcurrentBag<string>();
+ParallelOptions parallelOptions = new()
+{
+    MaxDegreeOfParallelism = 8
+};
+
+var robotsFileParser = new RobotsFileParser();
+var sitesRobotFile = new ConcurrentDictionary<string, RobotsFile>();
+await Parallel.ForEachAsync(Config.Instance.Sites, parallelOptions, async (site, _) =>
+{
+    sitesRobotFile[site.Host] = await robotsFileParser.FromUriAsync(new Uri($"http://{site.Host}/robots.txt"));
+});
 
 List<(string host, string tag)> sitesTags;
 if (Config.Instance.MastodonPostgresConnectionString.HasValue())
@@ -53,19 +64,29 @@ else
         .ToList();
 }
 
-ParallelOptions parallelOptions = new()
-{
-    MaxDegreeOfParallelism = 8
-};
-
+var importedList = File.ReadAllLines(importedPath).ToList();
+var imported = importedList.ToHashSet();
+var statusesToLoadBag = new ConcurrentBag<string>();
 await Parallel.ForEachAsync(sitesTags, parallelOptions, async (st, _) =>
 {
     var (site, tag) = st;
     Console.WriteLine($"Fetching tag #{tag} from {site}");
+
+    var url = $"https://{site}/tags/{tag}.json";
+    if (sitesRobotFile.TryGetValue(site, out var robotsFile))
+    {
+        var allowed = robotsFile.IsAllowedAccess(new Uri(url), "GetMoarFediverse");
+        if (!allowed)
+        {
+            Console.WriteLine($"Scraping {url} is not allowed based on their robots.txt file");
+            return;
+        }
+    }
+    
     HttpResponseMessage? response = null;
     try
     {
-        response = await client.GetAsync($"https://{site}/tags/{tag}.json");
+        response = await client.GetAsync(url);
         response.EnsureSuccessStatusCode();
     }
     catch (Exception e)
