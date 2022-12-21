@@ -7,7 +7,17 @@ if (args.Length == 1){
     configPath = args[0];
 }
 
+if (configPath.IsNullOrEmpty())
+{
+    throw new Exception("Missing config path");
+}
+
 Config.Init(configPath);
+
+if (Config.Instance == null)
+{
+    throw new Exception("Error initializing config object");
+}
 
 var client = new HttpClient();
 var authClient = new HttpClient
@@ -27,19 +37,19 @@ var imported = importedList.ToHashSet();
 var statusesToLoadBag = new ConcurrentBag<string>();
 
 List<(string host, string tag)> sitesTags;
-if (string.IsNullOrEmpty(Config.Instance.MastodonPostgresConnectionString))
+if (Config.Instance.MastodonPostgresConnectionString.HasValue())
+{
+    var tags = await MastodonConnectionHelper.GetFollowedTagsAsync();
+    sitesTags = Config.Instance.Sites
+        .SelectMany(s => tags.Select(t => (s.Host, t)))
+        .ToList();
+}
+else
 {
     sitesTags = Config.Instance.Sites
         .SelectMany(s => Config.Instance.Tags.Select(tag => (s.Host, tag)))
         .Concat(Config.Instance.Sites.SelectMany(s => s.SiteSpecificTags.Select(tag => (s.Host, tag))))
         .OrderBy(t => t.tag)
-        .ToList();
-}
-else
-{
-    var tags = await MastodonConnectionHelper.GetFollowedTagsAsync();
-    sitesTags = Config.Instance.Sites
-        .SelectMany(s => tags.Select(t => (s.Host, t)))
         .ToList();
 }
 
@@ -66,6 +76,11 @@ await Parallel.ForEachAsync(sitesTags, parallelOptions, async (st, _) =>
 
     var json = await response.Content.ReadAsStringAsync();
     var data = JsonSerializer.Deserialize(json, CamelCaseJsonContext.Default.TagResponse);
+    if (data == null)
+    {
+        Console.WriteLine($"Error deserializing the response when pulling #{tag} posts from {site}");
+        return;
+    }
 
     foreach (var statusLink in data.OrderedItems.Where(i=>!imported.Contains(i)))
     {
@@ -79,8 +94,10 @@ foreach (var statusLink in statusesToLoad)
     Console.WriteLine($"Bringing in {statusLink}");
     try
     {
-        var content = new List<KeyValuePair<string, string>>();
-        content.Add(new KeyValuePair<string, string>("statusUrl", statusLink));
+        var content = new List<KeyValuePair<string, string>>
+        {
+            new("statusUrl", statusLink)
+        };
 
         var res = await authClient.PostAsync("index", new FormUrlEncodedContent(content));
         res.EnsureSuccessStatusCode();
@@ -103,5 +120,10 @@ File.WriteAllLines(importedPath, importedList);
 
 public class TagResponse
 {
-    public string[] OrderedItems { get; set; }
+    public string[] OrderedItems { get; }
+    
+    public TagResponse(string[] orderedItems)
+    {
+        OrderedItems = orderedItems;
+    }
 }

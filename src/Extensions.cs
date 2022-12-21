@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace GetMoarFediverse;
 
 public static class Extensions
 {
-    public static bool IsNullOrEmpty(this string s) => string.IsNullOrEmpty(s);
+    public static bool IsNullOrEmpty([NotNullWhen(returnValue: false)]this string? s) => string.IsNullOrEmpty(s);
 
-    public static bool HasValue(this string s) => !s.IsNullOrEmpty();
+    public static bool HasValue([NotNullWhen(returnValue: true)]this string? s) => !s.IsNullOrEmpty();
 }
