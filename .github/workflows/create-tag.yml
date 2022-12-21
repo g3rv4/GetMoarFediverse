@@ -8,6 +8,7 @@ on:
 jobs:
   deployment:
     runs-on: ubuntu-latest
+    continue-on-error: true
     environment: release
     steps:
       - name: Checkout
