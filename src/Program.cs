@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using GetMoarFediverse;
+using TurnerSoftware.RobotsExclusionTools;
 
 var configPath = Environment.GetEnvironmentVariable("CONFIG_PATH");
 if (args.Length == 1){
@@ -20,6 +21,8 @@ if (Config.Instance == null)
 }
 
 var client = new HttpClient();
+client.DefaultRequestHeaders.Add("User-Agent", "GetMoarFediverse");
+
 var authClient = new HttpClient
 {
     BaseAddress = new Uri(Config.Instance.FakeRelayUrl)
@@ -32,32 +35,48 @@ if (!File.Exists(importedPath))
     File.WriteAllText(importedPath, "");
 }
 
-var importedList = File.ReadAllLines(importedPath).ToList();
-var imported = importedList.ToHashSet();
-var statusesToLoadBag = new ConcurrentBag<string>();
-
-List<(string host, string tag)> sitesTags;
-if (Config.Instance.MastodonPostgresConnectionString.HasValue())
-{
-    var tags = await MastodonConnectionHelper.GetFollowedTagsAsync();
-    sitesTags = Config.Instance.Sites
-        .SelectMany(s => tags.Select(t => (s.Host, t)))
-        .ToList();
-}
-else
-{
-    sitesTags = Config.Instance.Sites
-        .SelectMany(s => Config.Instance.Tags.Select(tag => (s.Host, tag)))
-        .Concat(Config.Instance.Sites.SelectMany(s => s.SiteSpecificTags.Select(tag => (s.Host, tag))))
-        .OrderBy(t => t.tag)
-        .ToList();
-}
-
 ParallelOptions parallelOptions = new()
 {
     MaxDegreeOfParallelism = 8
 };
 
+var robotsFileParser = new RobotsFileParser();
+var sitesRobotStatus = new ConcurrentDictionary<string, bool>();
+await Parallel.ForEachAsync(Config.Instance.Sites, parallelOptions, async (site, _) =>
+{
+    var robotsFile = await robotsFileParser.FromUriAsync(new Uri($"http://{site.Host}/robots.txt"));
+    var allowedAccess = robotsFile.IsAllowedAccess(
+        new Uri($"https://{site.Host}/tags/example.json"),
+        "GetMoarFediverse"
+    );
+    sitesRobotStatus[site.Host] = allowedAccess;
+});
+
+var allowedSites = sitesRobotStatus
+    .Where(i => i.Value)
+    .Select(i => i.Key)
+    .ToList();
+
+List<(string host, string tag)> sitesTags;
+if (Config.Instance.MastodonPostgresConnectionString.HasValue())
+{
+    var tags = await MastodonConnectionHelper.GetFollowedTagsAsync();
+    sitesTags = allowedSites
+        .SelectMany(s => tags.Select(t => (s, t)))
+        .ToList();
+}
+else
+{
+    sitesTags = allowedSites
+        .SelectMany(s => Config.Instance.Tags.Select(tag => (s, tag)))
+        .Concat(Config.Instance.Sites.SelectMany(s => s.SiteSpecificTags.Select(tag => (s.Host, tag))))
+        .OrderBy(t => t.tag)
+        .ToList();
+}
+
+var importedList = File.ReadAllLines(importedPath).ToList();
+var imported = importedList.ToHashSet();
+var statusesToLoadBag = new ConcurrentBag<string>();
 await Parallel.ForEachAsync(sitesTags, parallelOptions, async (st, _) =>
 {
     var (site, tag) = st;
