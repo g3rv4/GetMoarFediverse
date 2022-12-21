@@ -41,34 +41,24 @@ ParallelOptions parallelOptions = new()
 };
 
 var robotsFileParser = new RobotsFileParser();
-var sitesRobotStatus = new ConcurrentDictionary<string, bool>();
+var sitesRobotFile = new ConcurrentDictionary<string, RobotsFile>();
 await Parallel.ForEachAsync(Config.Instance.Sites, parallelOptions, async (site, _) =>
 {
-    var robotsFile = await robotsFileParser.FromUriAsync(new Uri($"http://{site.Host}/robots.txt"));
-    var allowedAccess = robotsFile.IsAllowedAccess(
-        new Uri($"https://{site.Host}/tags/example.json"),
-        "GetMoarFediverse"
-    );
-    sitesRobotStatus[site.Host] = allowedAccess;
+    sitesRobotFile[site.Host] = await robotsFileParser.FromUriAsync(new Uri($"http://{site.Host}/robots.txt"));
 });
-
-var allowedSites = sitesRobotStatus
-    .Where(i => i.Value)
-    .Select(i => i.Key)
-    .ToList();
 
 List<(string host, string tag)> sitesTags;
 if (Config.Instance.MastodonPostgresConnectionString.HasValue())
 {
     var tags = await MastodonConnectionHelper.GetFollowedTagsAsync();
-    sitesTags = allowedSites
-        .SelectMany(s => tags.Select(t => (s, t)))
+    sitesTags = Config.Instance.Sites
+        .SelectMany(s => tags.Select(t => (s.Host, t)))
         .ToList();
 }
 else
 {
-    sitesTags = allowedSites
-        .SelectMany(s => Config.Instance.Tags.Select(tag => (s, tag)))
+    sitesTags = Config.Instance.Sites
+        .SelectMany(s => Config.Instance.Tags.Select(tag => (s.Host, tag)))
         .Concat(Config.Instance.Sites.SelectMany(s => s.SiteSpecificTags.Select(tag => (s.Host, tag))))
         .OrderBy(t => t.tag)
         .ToList();
@@ -81,10 +71,22 @@ await Parallel.ForEachAsync(sitesTags, parallelOptions, async (st, _) =>
 {
     var (site, tag) = st;
     Console.WriteLine($"Fetching tag #{tag} from {site}");
+
+    var url = $"https://{site}/tags/{tag}.json";
+    if (sitesRobotFile.TryGetValue(site, out var robotsFile))
+    {
+        var allowed = robotsFile.IsAllowedAccess(new Uri(url), "GetMoarFediverse");
+        if (!allowed)
+        {
+            Console.WriteLine($"Scraping {url} is not allowed based on their robots.txt file");
+            return;
+        }
+    }
+    
     HttpResponseMessage? response = null;
     try
     {
-        response = await client.GetAsync($"https://{site}/tags/{tag}.json");
+        response = await client.GetAsync(url);
         response.EnsureSuccessStatusCode();
     }
     catch (Exception e)
