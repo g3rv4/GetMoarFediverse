@@ -50,6 +50,12 @@ public class Config
             Console.WriteLine("Warning: Sites is deprecated, please use Instances instead");
         }
 
+        data.Tags ??= Array.Empty<string>();
+        if (data.MastodonPostgresConnectionString.HasValue() && data.Tags.Length > 0)
+        {
+            throw new Exception("You can't specify both MastodonPostgresConnectionString and Tags");
+        }
+
         Instance = new Config(importedPath, data.FakeRelayUrl, apiKey, data.MastodonPostgresConnectionString,
             data.Tags.ToImmutableArray(), data.GetImmutableSites());
     }
@@ -60,7 +66,7 @@ public class Config
         public string? FakeRelayApiKey { get; set; }
         public string? MastodonPostgresConnectionString { get; set; }
         public string[]? Instances { get; set; }
-        public string[] Tags { get; set; }
+        public string[]? Tags { get; set; }
         public InternalSiteData[]? Sites { get; set; }
 
         public ImmutableArray<SiteData> GetImmutableSites()
