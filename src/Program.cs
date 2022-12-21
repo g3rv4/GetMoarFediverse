@@ -91,7 +91,7 @@ await Parallel.ForEachAsync(sitesTags, parallelOptions, async (st, _) =>
     }
     catch (Exception e)
     {
-        Console.WriteLine($"Error fetching tag, status code: {response?.StatusCode}. Error: {e.Message}");
+        Console.WriteLine($"Error fetching tag {tag} from {site}, status code: {response?.StatusCode}. Error: {e.Message}");
         return;
     }
 
