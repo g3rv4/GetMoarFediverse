@@ -112,11 +112,11 @@ await Parallel.ForEachAsync(sitesTags, new ParallelOptions{MaxDegreeOfParallelis
         count++;
     }
     
-    Console.WriteLine($"Retrieved {count} unique statuses from {site} with hashtag #{tag}");
+    Console.WriteLine($"Retrieved {count} new statuses from {site} with hashtag #{tag}");
 });
 
 var statusesToLoad = statusesToLoadBag.ToHashSet();
-Console.WriteLine($"Originally retrieved {statusesToLoadBag} statuses. After removing duplicates, I got {statusesToLoad.Count} really unique ones");
+Console.WriteLine($"Originally retrieved {statusesToLoadBag.Count} statuses. After removing duplicates, I got {statusesToLoad.Count} really unique ones");
 foreach (var statusLink in statusesToLoad)
 {
     Console.WriteLine($"Bringing in {statusLink}");
