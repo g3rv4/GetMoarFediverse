@@ -35,28 +35,30 @@ if (!File.Exists(importedPath))
     File.WriteAllText(importedPath, "");
 }
 
-ParallelOptions parallelOptions = new()
-{
-    MaxDegreeOfParallelism = 8
-};
-
 var robotsFileParser = new RobotsFileParser();
 var sitesRobotFile = new ConcurrentDictionary<string, RobotsFile>();
-await Parallel.ForEachAsync(Config.Instance.Sites, parallelOptions, async (site, _) =>
-{
-    sitesRobotFile[site.Host] = await robotsFileParser.FromUriAsync(new Uri($"http://{site.Host}/robots.txt"));
-});
+await Parallel.ForEachAsync(Config.Instance.Sites,
+    new ParallelOptions{MaxDegreeOfParallelism = Config.Instance.Sites.Length},
+    async (site, _) =>
+    {
+        sitesRobotFile[site.Host] = await robotsFileParser.FromUriAsync(new Uri($"http://{site.Host}/robots.txt"));
+    }
+);
 
 List<(string host, string tag)> sitesTags;
+int numberOfTags;
 if (Config.Instance.MastodonPostgresConnectionString.HasValue())
 {
     var tags = await MastodonConnectionHelper.GetFollowedTagsAsync();
+    numberOfTags = tags.Count;
     sitesTags = Config.Instance.Sites
         .SelectMany(s => tags.Select(t => (s.Host, t)))
+        .OrderBy(e => e.t)
         .ToList();
 }
 else
 {
+    numberOfTags = Config.Instance.Tags.Length;
     sitesTags = Config.Instance.Sites
         .SelectMany(s => Config.Instance.Tags.Select(tag => (s.Host, tag)))
         .Concat(Config.Instance.Sites.SelectMany(s => s.SiteSpecificTags.Select(tag => (s.Host, tag))))
@@ -67,7 +69,7 @@ else
 var importedList = File.ReadAllLines(importedPath).ToList();
 var imported = importedList.ToHashSet();
 var statusesToLoadBag = new ConcurrentBag<string>();
-await Parallel.ForEachAsync(sitesTags, parallelOptions, async (st, _) =>
+await Parallel.ForEachAsync(sitesTags, new ParallelOptions{MaxDegreeOfParallelism = numberOfTags * 2}, async (st, _) =>
 {
     var (site, tag) = st;
     Console.WriteLine($"Fetching tag #{tag} from {site}");
