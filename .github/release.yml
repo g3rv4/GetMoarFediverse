@@ -1,0 +1,15 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+  categories:
+    - title: Release and GitHub Actions changes 🛠
+      labels:
+        - release-improvement
+        - github-actions
+    - title: Exciting New Features 🎉
+      labels:
+        - new-feature
+    - title: Other Changes
+      labels:
+        - "*"
