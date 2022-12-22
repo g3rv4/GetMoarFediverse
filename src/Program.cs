@@ -38,7 +38,7 @@ if (!File.Exists(importedPath))
 var robotsFileParser = new RobotsFileParser();
 var sitesRobotFile = new ConcurrentDictionary<string, RobotsFile>();
 await Parallel.ForEachAsync(Config.Instance.Sites,
-    new ParallelOptions{MaxDegreeOfParallelism = Config.Instance.Sites.Length},
+    new ParallelOptions { MaxDegreeOfParallelism = Config.Instance.Sites.Length },
     async (site, _) =>
     {
         sitesRobotFile[site.Host] = await robotsFileParser.FromUriAsync(new Uri($"http://{site.Host}/robots.txt"));
