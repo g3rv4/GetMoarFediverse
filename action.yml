@@ -1,0 +1,38 @@
+name: GetMoarFediverse
+description: Runs GetMoarFediverse in GitHub actions
+inputs:
+  config_file:
+    description: Path to the config.json
+    required: true
+  api_key:
+    description: FakeRelay API key if it isn't defined in the config.json
+  tag:
+    description: Tag of the getmoarfediverse docker container
+    required: true
+    default: latest
+runs:
+  using: composite
+  steps:
+    - name: create tmp dir
+      id: mktemp
+      run: echo "MOAR_TMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
+      shell: bash
+    - name: copy config
+      run: cp ${{ inputs.config_file }} ${MOAR_TMP_DIR}/config.json
+      shell: bash
+    - name: download artifact
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        name: moar-imported
+        path: ${{ env.MOAR_TMP_DIR }}
+        if_no_artifact_found: warn
+    - name: import-data
+      env:
+        FAKERELAY_APIKEY: ${{ inputs.api_key }}
+      run: docker run -v "${MOAR_TMP_DIR}:/data" -e "FAKERELAY_APIKEY=${FAKERELAY_APIKEY}" ghcr.io/g3rv4/getmoarfediverse:${{ inputs.tag }}
+      shell: bash
+    - name: store artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: moar-imported
+        path: ${{ env.MOAR_TMP_DIR }}/imported.txt
