@@ -6,10 +6,10 @@ inputs:
     required: true
   api_key:
     description: FakeRelay API key if it isn't defined in the config.json
-  tag:
-    description: Tag of the getmoarfediverse docker container
+  executable_path:
+    description: Path to the GetMoarFediverse archive
     required: true
-    default: latest
+    default: https://github.com/g3rv4/GetMoarFediverse/releases/latest/download/GetMoarFediverse_linux-x64.tgz
 runs:
   using: composite
   steps:
@@ -29,7 +29,11 @@ runs:
     - name: import-data
       env:
         FAKERELAY_APIKEY: ${{ inputs.api_key }}
-      run: docker run -v "${MOAR_TMP_DIR}:/data" -e "FAKERELAY_APIKEY=${FAKERELAY_APIKEY}" ghcr.io/g3rv4/getmoarfediverse:${{ inputs.tag }}
+      run: |
+        wget -nv ${{ inputs.executable_path }}
+        tar -xzf GetMoarFediverse_linux-x64.tgz
+        cd GetMoarFediverse-*
+        ./GetMoarFediverse ${{ env.MOAR_TMP_DIR }}/config.json
       shell: bash
     - name: store artifact
       uses: actions/upload-artifact@v3
