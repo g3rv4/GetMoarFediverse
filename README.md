@@ -60,7 +60,7 @@ I recommend you watch [this demo I recorded](https://youtu.be/XOBD8OsdjGY). Basi
 1. Fork [GMFActionDemo](https://github.com/g3rv4/GMFActionDemo)
 2. Change the `config.json` so that you pull the tags you want
 3. Add a `FAKERELAY_APIKEY` GitHub Action secret with your api key
-4. Uncomment the two lines on `GetMoarFediverse.yml` that run it on a scheduled route. Keep in mind that [he schedule event can be delayed during periods of high loads of GitHub Actions workflow runs](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule).
+4. Uncomment the two lines on `GetMoarFediverse.yml` that run it on a scheduled route. Keep in mind that [the schedule event can be delayed during periods of high loads of GitHub Actions workflow runs](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule).
 
 This was built and graciously shared back to the main repo by [@chdorner](https://github.com/chdorner). Thanks a ton!
 
