@@ -40,7 +40,7 @@ You can pass `MastodonPostgresConnectionString` with a connection string to your
 
 There are many ways for you to run GetMoarFediverse:
 
-* You can run it as a GitHub Action. Thank you [@chdorner](https://github.com/chdorner)! this is awesome!
+* [You can run it as a GitHub Action](#running-it-as-a-github-action). Thank you [@chdorner](https://github.com/chdorner)! this is awesome!
   * This means you don't have to have anything running on your infrastructure!
   * This also means you need to maintain the list of tags you want to pull (they can't be updated dynamically, as GitHub Actions workers can't connect to your postgres database (hopefully!))
 * [You can run a prebuilt executable](#download-a-prebuilt-executable)
@@ -48,7 +48,7 @@ There are many ways for you to run GetMoarFediverse:
   * You can download content with the tags your users are following
   * This is the fastest way to run it
   * Executables are trimmed so that they're smaller than 10 MB
-* You can run it as a docker container
+* [You can run it as a docker container](#you-can-run-it-on-docker)
   * You need to run it in your infrastructure
   * You can download content with the tags your users are following
   * This gives you better isolation, whatever GetMoarFediverse does, it can't escape its container
@@ -87,8 +87,6 @@ You will find an executable for Windows as well, which you can use on a schedule
 
 ### You can run it on docker
 
-# Running GetMoarFediverse on Docker
-
 You can use docker compose for this. This `docker-compose.yml` shows how it can be used:
 
 ```
@@ -120,8 +118,8 @@ You can run it as a cron every 15 minutes, doing something like this:
 1,16,31,46 * * * * /usr/local/bin/docker-compose -f /path/to/GetMoarFediverse/docker-compose.yml run --rm importdata > /path/to/GetMoarFediverse/cron.log 2>&1
 ```
 
-### What about Windows?
+### What about Docker on Windows?
 
-You can run it on Docker on Windows, and set up a scheduled task. You can watch [this demo by Jeff Lindborg](https://www.youtube.com/watch?v=v73ZKtP0rzE).
+I'd recommend you use the executable... but if you really want to, you can run it on Docker on Windows and set up a scheduled task. You can watch [this demo by Jeff Lindborg](https://www.youtube.com/watch?v=v73ZKtP0rzE).
 
 I could package it as an installer, and that would remove the need of Docker... would you be interested in that? Open an issue :)
