@@ -1,7 +1,8 @@
 name: GetMoarFediverse
 description: Runs GetMoarFediverse in GitHub actions
-icon: activity
-color: green
+branding:
+  icon: activity
+  color: green
 inputs:
   config_file:
     description: Path to the config.json
