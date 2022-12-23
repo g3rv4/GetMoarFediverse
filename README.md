@@ -110,5 +110,3 @@ You can run it as a cron every 15 minutes, doing something like this:
 ### What about Docker on Windows?
 
 I'd recommend you use the executable... but if you really want to, you can run it on Docker on Windows and set up a scheduled task. You can watch [this demo by Jeff Lindborg](https://www.youtube.com/watch?v=v73ZKtP0rzE).
-
-I could package it as an installer, and that would remove the need of Docker... would you be interested in that? Open an issue :)
