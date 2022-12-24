@@ -50,6 +50,10 @@ int numberOfTags;
 if (Config.Instance.MastodonPostgresConnectionString.HasValue())
 {
     var tags = await MastodonConnectionHelper.GetFollowedTagsAsync();
+    if (Config.Instance.PinnedTags)
+    {
+        tags = tags.Concat(await MastodonConnectionHelper.GetPinnedTagsAsync()).Distinct().ToList();
+    }
     numberOfTags = tags.Count;
     sitesTags = Config.Instance.Sites
         .SelectMany(s => tags.Select(t => (s.Host, t)))
