@@ -36,11 +36,25 @@ You can pass `MastodonPostgresConnectionString` with a connection string to your
 }
 ```
 
+#### And download all the hashtags pinned by your users!
+
+If you add `"PinnedTags": true`, you can also populate the hashtags pinned by your users :) thanks [@nberlee](https://github.com/nberlee), this is great!
+
+```
+{
+    "FakeRelayUrl": "https://fakerelay.gervas.io",
+    "FakeRelayApiKey": "1TxL6m1Esx6tnv4EPxscvAmdQN7qSn0nKeyoM7LD8b9m+GNfrKaHiWgiT3QcNMUA+dWLyWD8qyl1MuKJ+4uHA==",
+    "MastodonPostgresConnectionString": "Host=myserver;Username=mastodon_read;Password=password;Database=mastodon_production",
+    "PinnedTags": true,
+    "Instances": [ "hachyderm.io", "mastodon.social" ]
+}
+```
+
 ## How can I run it?
 
 There are many ways for you to run GetMoarFediverse:
 
-* [You can run it as a GitHub Action](#running-it-as-a-github-action). Thank you [@chdorner](https://github.com/chdorner)! this is awesome!
+* [You can run it as a GitHub Action](#running-it-as-a-github-action). Thank you [@chdorner](https://github.com/chdorner), this is awesome!
   * This means you don't have to have anything running on your infrastructure!
   * This also means you need to maintain the list of tags you want to pull (they can't be updated dynamically, as GitHub Actions workers can't connect to your postgres database (hopefully!))
 * [You can run a prebuilt executable](#download-a-prebuilt-executable)
