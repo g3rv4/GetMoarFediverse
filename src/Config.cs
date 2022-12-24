@@ -11,17 +11,19 @@ public class Config
     public string FakeRelayUrl { get; }
     public string FakeRelayApiKey { get; }
     public string? MastodonPostgresConnectionString { get; }
+    public bool PinnedTags { get; }
     public ImmutableArray<string> Tags { get; }
     public ImmutableArray<SiteData> Sites { get; }
 
 
     private Config(string importedPath, string fakeRelayUrl, string fakeRelayApiKey, string? mastodonPostgresConnectionString,
-                    ImmutableArray<string> tags, ImmutableArray<SiteData> sites)
+                    bool pinnedTags, ImmutableArray<string> tags, ImmutableArray<SiteData> sites)
     {
         ImportedPath = importedPath;
         FakeRelayUrl = fakeRelayUrl;
         FakeRelayApiKey = fakeRelayApiKey;
         MastodonPostgresConnectionString = mastodonPostgresConnectionString;
+        PinnedTags = pinnedTags;
         Tags = tags;
         Sites = sites;
     }
@@ -68,7 +70,7 @@ public class Config
         }
 
         Instance = new Config(importedPath, data.FakeRelayUrl, apiKey, data.MastodonPostgresConnectionString,
-            data.Tags.ToImmutableArray(), data.GetImmutableSites());
+            data.PinnedTags, data.Tags.ToImmutableArray(), data.GetImmutableSites());
     }
 
     public class ConfigData
@@ -76,6 +78,7 @@ public class Config
         public string? FakeRelayUrl { get; set; }
         public string? FakeRelayApiKey { get; set; }
         public string? MastodonPostgresConnectionString { get; set; }
+        public bool PinnedTags { get; set; }
         public string[]? Instances { get; set; }
         public string[]? Tags { get; set; }
         public InternalSiteData[]? Sites { get; set; }
