@@ -23,10 +23,17 @@ jobs:
 
   build-docker:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        architecture: [ amd64, arm64v8 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Build things
         shell: pwsh
         run: |
-          docker build .
+          if ('${{ matrix.architecture }}' -eq 'arm64v8') {
+            sudo apt-get install qemu binfmt-support qemu-user-static
+            docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          }
+          docker build . --build-arg ARCH=${{ matrix.architecture }}
