@@ -141,10 +141,10 @@ foreach (var statusLink in statusesToLoad)
     }
 }
 
-if (importedList.Count > 1000)
+if (importedList.Count > 5000)
 {
     importedList = importedList
-        .Skip(importedList.Count - 1000)
+        .Skip(importedList.Count - 5000)
         .ToList();
 }
 
