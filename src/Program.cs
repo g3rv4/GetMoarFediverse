@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using GetMoarFediverse;
+using GetMoarFediverse.Configuration;
 using TurnerSoftware.RobotsExclusionTools;
 
 var configPath = Environment.GetEnvironmentVariable("CONFIG_PATH");
@@ -13,23 +14,18 @@ if (configPath.IsNullOrEmpty())
     throw new Exception("Missing config path");
 }
 
-Config.Init(configPath);
-
-if (Config.Instance == null)
-{
-    throw new Exception("Error initializing config object");
-}
+Context.Load(configPath);
 
 var client = new HttpClient();
 client.DefaultRequestHeaders.Add("User-Agent", "GetMoarFediverse");
 
 var authClient = new HttpClient
 {
-    BaseAddress = new Uri(Config.Instance.FakeRelayUrl)
+    BaseAddress = new Uri(Context.Configuration.FakeRelayUrl)
 };
-authClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + Config.Instance.FakeRelayApiKey);
+authClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + Context.Configuration.FakeRelayApiKey);
 
-var importedPath = Config.Instance.ImportedPath;
+var importedPath = Context.Configuration.ImportedPath;
 if (!File.Exists(importedPath))
 {
     File.WriteAllText(importedPath, "");
@@ -37,8 +33,8 @@ if (!File.Exists(importedPath))
 
 var robotsFileParser = new RobotsFileParser();
 var sitesRobotFile = new ConcurrentDictionary<string, RobotsFile>();
-await Parallel.ForEachAsync(Config.Instance.Sites,
-    new ParallelOptions { MaxDegreeOfParallelism = Config.Instance.Sites.Length },
+await Parallel.ForEachAsync(Context.Configuration.Sites,
+    new ParallelOptions { MaxDegreeOfParallelism = Context.Configuration.Sites.Length },
     async (site, _) =>
     {
         sitesRobotFile[site.Host] = await robotsFileParser.FromUriAsync(new Uri($"http://{site.Host}/robots.txt"));
@@ -47,25 +43,36 @@ await Parallel.ForEachAsync(Config.Instance.Sites,
 
 List<(string host, string tag)> sitesTags;
 int numberOfTags;
-if (Config.Instance.MastodonPostgresConnectionString.HasValue())
+
+var tags = new List<string>();
+
+if (Context.Configuration.MastodonPostgresConnectionString.HasValue() || Context.Configuration.Api != null)
 {
-    var tags = await MastodonConnectionHelper.GetFollowedTagsAsync();
-    if (Config.Instance.PinnedTags)
+    tags.AddRange(await MastodonConnectionHelper.GetFollowedTagsAsync());
+}
+
+if (Context.Configuration.MastodonPostgresConnectionString.HasValue())
+{
+    if (Context.Configuration.PinnedTags)
     {
         tags = tags.Concat(await MastodonConnectionHelper.GetPinnedTagsAsync()).Distinct().ToList();
     }
+}
+
+if (tags.Any())
+{
     numberOfTags = tags.Count;
-    sitesTags = Config.Instance.Sites
+    sitesTags = Context.Configuration.Sites
         .SelectMany(s => tags.Select(t => (s.Host, t)))
         .OrderBy(e => e.t)
         .ToList();
 }
 else
 {
-    numberOfTags = Config.Instance.Tags.Length;
-    sitesTags = Config.Instance.Sites
-        .SelectMany(s => Config.Instance.Tags.Select(tag => (s.Host, tag)))
-        .Concat(Config.Instance.Sites.SelectMany(s => s.SiteSpecificTags.Select(tag => (s.Host, tag))))
+    numberOfTags = Context.Configuration.Tags.Length;
+    sitesTags = Context.Configuration.Sites
+        .SelectMany(s => Context.Configuration.Tags.Select(tag => (s.Host, tag)))
+        .Concat(Context.Configuration.Sites.SelectMany(s => s.SiteSpecificTags.Select(tag => (s.Host, tag))))
         .OrderBy(t => t.tag)
         .ToList();
 }
@@ -149,13 +156,3 @@ if (importedList.Count > 5000)
 }
 
 File.WriteAllLines(importedPath, importedList);
-
-public class TagResponse
-{
-    public string[] OrderedItems { get; }
-    
-    public TagResponse(string[] orderedItems)
-    {
-        OrderedItems = orderedItems;
-    }
-}
