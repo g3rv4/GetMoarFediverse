@@ -41,7 +41,14 @@ await Parallel.ForEachAsync(Config.Instance.Sites,
     new ParallelOptions { MaxDegreeOfParallelism = Config.Instance.Sites.Length },
     async (site, _) =>
     {
-        sitesRobotFile[site.Host] = await robotsFileParser.FromUriAsync(new Uri($"http://{site.Host}/robots.txt"));
+        try
+        {
+            sitesRobotFile[site.Host] = await robotsFileParser.FromUriAsync(new Uri($"http://{site.Host}/robots.txt"));
+        }
+        catch
+        {
+            Console.WriteLine($"Ignoring {site.Host} because had issues fetching its robots data (is the site down?)");
+        }
     }
 );
 
@@ -87,6 +94,11 @@ await Parallel.ForEachAsync(sitesTags, new ParallelOptions{MaxDegreeOfParallelis
             Console.WriteLine($"Scraping {url} is not allowed based on their robots.txt file");
             return;
         }
+    }
+    else
+    {
+        Console.WriteLine($"Not scraping {url} because I couldn't fetch robots data.");
+        return;
     }
     
     HttpResponseMessage? response = null;
