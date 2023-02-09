@@ -121,13 +121,19 @@ await Parallel.ForEachAsync(sitesTags, new ParallelOptions{MaxDegreeOfParallelis
         return;
     }
 
-    int count = 0;
-    foreach (var statusLink in data.OrderedItems.Where(i=>!imported.Contains(i)))
+    if (data.OrderedItems == null)
+    {
+        Console.WriteLine($"Got null on OrderedItems when pulling #{tag} posts from {site}");
+        return;
+    }
+
+    var count = 0;
+    foreach (var statusLink in data.OrderedItems.Where(i => !imported.Contains(i)))
     {
         statusesToLoadBag.Add(statusLink);
         count++;
     }
-    
+
     Console.WriteLine($"Retrieved {count} new statuses from {site} with hashtag #{tag}");
 });
 
@@ -164,7 +170,7 @@ File.WriteAllLines(importedPath, importedList);
 
 public class TagResponse
 {
-    public string[] OrderedItems { get; }
+    public string[]? OrderedItems { get; }
     
     public TagResponse(string[] orderedItems)
     {
