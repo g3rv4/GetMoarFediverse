@@ -7,7 +7,7 @@ internal partial class JsonContext : JsonSerializerContext
 {
 }
 
-[JsonSerializable(typeof(TagResponse))]
+[JsonSerializable(typeof(Status[]))]
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 internal partial class CamelCaseJsonContext : JsonSerializerContext
 {

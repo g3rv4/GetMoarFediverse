@@ -85,7 +85,7 @@ await Parallel.ForEachAsync(sitesTags, new ParallelOptions{MaxDegreeOfParallelis
     var (site, tag) = st;
     Console.WriteLine($"Fetching tag #{tag} from {site}");
 
-    var url = $"https://{site}/tags/{tag}.json";
+    var url = $"https://{site}/api/v1/timelines/tag/{tag}?limit=40";
     if (sitesRobotFile.TryGetValue(site, out var robotsFile))
     {
         var allowed = robotsFile.IsAllowedAccess(new Uri(url), "GetMoarFediverse");
@@ -114,23 +114,18 @@ await Parallel.ForEachAsync(sitesTags, new ParallelOptions{MaxDegreeOfParallelis
     }
 
     var json = await response.Content.ReadAsStringAsync();
-    var data = JsonSerializer.Deserialize(json, CamelCaseJsonContext.Default.TagResponse);
+
+    var data = JsonSerializer.Deserialize(json, CamelCaseJsonContext.Default.StatusArray);
     if (data == null)
     {
         Console.WriteLine($"Error deserializing the response when pulling #{tag} posts from {site}");
         return;
     }
 
-    if (data.OrderedItems == null)
-    {
-        Console.WriteLine($"Got null on OrderedItems when pulling #{tag} posts from {site}");
-        return;
-    }
-
     var count = 0;
-    foreach (var statusLink in data.OrderedItems.Where(i => !imported.Contains(i)))
+    foreach (var statusLink in data.Where(i => !imported.Contains(i.Uri)))
     {
-        statusesToLoadBag.Add(statusLink);
+        statusesToLoadBag.Add(statusLink.Uri);
         count++;
     }
 
@@ -168,12 +163,12 @@ if (importedList.Count > 5000)
 
 File.WriteAllLines(importedPath, importedList);
 
-public class TagResponse
+public class Status
 {
-    public string[]? OrderedItems { get; }
-    
-    public TagResponse(string[] orderedItems)
+    public string Uri { get; }
+
+    public Status(string uri)
     {
-        OrderedItems = orderedItems;
+        Uri = uri;
     }
 }
