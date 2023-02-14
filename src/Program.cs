@@ -154,10 +154,12 @@ foreach (var statusLink in statusesToLoad)
     }
 }
 
-if (importedList.Count > 5000)
+var maxFileLines = sitesTags.Count * 40;
+if (importedList.Count > maxFileLines)
 {
+    Console.WriteLine($"Keeping the last {maxFileLines} on the status file");
     importedList = importedList
-        .Skip(importedList.Count - 5000)
+        .Skip(importedList.Count - maxFileLines)
         .ToList();
 }
 
