@@ -1,5 +1,7 @@
+using System.Net.Http.Headers;
 using Npgsql;
 using System.Text.Json;
+using GetMoarFediverse.Configuration;
 
 namespace GetMoarFediverse;
 
@@ -7,13 +9,56 @@ public static class MastodonConnectionHelper
 {
     public static async Task<List<string>> GetFollowedTagsAsync()
     {
-        if (Config.Instance == null) throw new Exception("Config object is not initialized");
-        if (Config.Instance.MastodonPostgresConnectionString.IsNullOrEmpty())
-        {
-            throw new Exception("Missing mastodon postgres connection string");
-        }
+        if (Context.Configuration == null) throw new Exception("Config object is not initialized");
         
-        await using var conn = new NpgsqlConnection(Config.Instance.MastodonPostgresConnectionString);
+        if (!Context.Configuration.MastodonPostgresConnectionString.IsNullOrEmpty())
+            return await GetFollowedTagsDatabaseAsync();
+
+        if (Context.Configuration.Api != null)
+            return await GetFollowedTagsApiAsync();
+
+        return new List<string>();
+    }
+
+    private static async Task<List<string>> GetFollowedTagsApiAsync()
+    {
+        if (Context.Configuration == null) throw new Exception("Config object is not initialized");
+        var api = Context.Configuration.Api!;
+        
+        var client = new HttpClient();
+        client.DefaultRequestHeaders.Add("User-Agent", "GetMoarFediverse");
+
+        var tags = new List<string>();
+
+        foreach (var token in api.Tokens)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{api.Url}v1/followed_tags")
+            {
+                Headers = {Authorization = new AuthenticationHeaderValue("Bearer", token.Token)}
+            };
+
+            var response = await client.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            var data = JsonSerializer.Deserialize(await response.Content.ReadAsStringAsync(),
+                CamelCaseJsonContext.Default.FollowedTagArray);
+            
+            if (data == null)
+            {
+                throw new Exception($"Error deserializing the followed tags response for {token.Owner}");
+            }
+            
+            tags.AddRange(data.Select(t => t.Name));
+        }
+
+        return tags.Distinct().OrderBy(t => t).ToList();
+    }
+    
+    private static async Task<List<string>> GetFollowedTagsDatabaseAsync()
+    {
+        if (Context.Configuration == null) throw new Exception("Config object is not initialized");
+        
+        await using var conn = new NpgsqlConnection(Context.Configuration.MastodonPostgresConnectionString);
         await conn.OpenAsync();
 
         var res = new List<string>();
@@ -27,13 +72,13 @@ public static class MastodonConnectionHelper
 
     public static async Task<List<string>> GetPinnedTagsAsync()
     {
-        if (Config.Instance == null) throw new Exception("Config object is not initialized");
-        if (Config.Instance.MastodonPostgresConnectionString.IsNullOrEmpty())
+        if (Context.Configuration == null) throw new Exception("Config object is not initialized");
+        if (Context.Configuration.MastodonPostgresConnectionString.IsNullOrEmpty())
         {
             throw new Exception("Missing mastodon postgres connection string");
         }
         
-        await using var conn = new NpgsqlConnection(Config.Instance.MastodonPostgresConnectionString);
+        await using var conn = new NpgsqlConnection(Context.Configuration.MastodonPostgresConnectionString);
         await conn.OpenAsync();
 
         var res = new List<string>();
@@ -64,7 +109,7 @@ ORDER BY col->'params'->>'id' ASC", conn);
             }
         }
      
-        return res;
+        return res.Distinct().ToList();
     }
 
 }
