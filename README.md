@@ -14,7 +14,7 @@ The `FakeRelayApiKey` on the `config.json` is optional. If you don't provide one
 
 This `config.json` pulls two tags from two instances:
 
-```
+```json
 {
     "FakeRelayUrl": "https://fakerelay.gervas.io",
     "FakeRelayApiKey": "1TxL6m1Esx6tnv4EPxscvAmdQN7qSn0nKeyoM7LD8b9mz+GNfrKaHiWgiT3QcNMUA+dWLyWD8qyl1MuKJ+4uHA==",
@@ -23,11 +23,11 @@ This `config.json` pulls two tags from two instances:
 }
 ```
 
-### Downloading all the followed hashtags of your instance
+### Downloading all the followed hashtags of your instance using the database
 
 You can pass `MastodonPostgresConnectionString` with a connection string to your postgres database and GetMoarFediverse will download content for all the hashtags the users on your server follow. Here's an example:
 
-```
+```json
 {
     "FakeRelayUrl": "https://fakerelay.gervas.io",
     "FakeRelayApiKey": "1TxL6m1Esx6tnv4EPxscvAmdQN7qSn0nKeyoM7LD8b9m+GNfrKaHiWgiT3QcNMUA+dWLyWD8qyl1MuKJ+4uHA==",
@@ -40,7 +40,7 @@ You can pass `MastodonPostgresConnectionString` with a connection string to your
 
 If you add `"PinnedTags": true`, you can also populate the hashtags pinned by your users :) thanks [@nberlee](https://github.com/nberlee), this is great!
 
-```
+```json
 {
     "FakeRelayUrl": "https://fakerelay.gervas.io",
     "FakeRelayApiKey": "1TxL6m1Esx6tnv4EPxscvAmdQN7qSn0nKeyoM7LD8b9m+GNfrKaHiWgiT3QcNMUA+dWLyWD8qyl1MuKJ+4uHA==",
@@ -49,6 +49,33 @@ If you add `"PinnedTags": true`, you can also populate the hashtags pinned by yo
     "Instances": [ "hachyderm.io", "mastodon.social" ]
 }
 ```
+
+### Downloading the hashtags followed by users via the API
+
+You can pass an `Api` object and GetMoarFediverse will download content for all the hashtags for each user for whom an access token is provided. Here's an example:
+
+```json
+{
+  "FakeRelayUrl": "https://foo.example",
+  "FakeRelayApiKey": "blah==",
+  "Api": {
+    "Url": "https://mastodon.example/api/",
+    "Tokens": [
+      {
+        "Owner": "Chris",
+        "Token": "1413D6izFoQdu0x00000DZ9ufcBvhOt7hoxuctHg2c"
+      }
+    ]
+  },
+  "Instances": [ "hachyderm.io", "mastodon.social" ]
+}
+```
+
+For the `Tokens` array items, both `Owner` and `Token` are required fields. Owner can be any non-empty string that would identify the owner of the token (e.g. could be the Mastodon username, app client ID, etc). This data structure allows multiple user accounts to be supported.
+
+To create an access token for the config file, visit the web interface of your Mastodon instance and go to `/settings/applications` (Settings > Development). The token only requires `read:follows` scope. Then copy the access token shown at the top of the screen.
+
+> If a database connection string is also provided via `MastodonPostgresConnectionString`, the tags will be retrieved via the database and any API-related settings will be ignored.
 
 ## How can I run it?
 

@@ -9,3 +9,5 @@ launchSettings.json
 data/
 output/
 *.DotSettings.user
+config.json
+imported.txt
