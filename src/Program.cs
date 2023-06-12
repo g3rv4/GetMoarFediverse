@@ -2,6 +2,7 @@
 using System.Text.Json;
 using GetMoarFediverse;
 using GetMoarFediverse.Configuration;
+using GetMoarFediverse.Responses;
 using TurnerSoftware.RobotsExclusionTools;
 
 var configPath = Environment.GetEnvironmentVariable("CONFIG_PATH");
@@ -109,10 +110,12 @@ await Parallel.ForEachAsync(sitesTags, new ParallelOptions{MaxDegreeOfParallelis
     }
     
     HttpResponseMessage? response = null;
+    string? json = null;
     try
     {
         response = await client.GetAsync(url);
         response.EnsureSuccessStatusCode();
+        json = await response.Content.ReadAsStringAsync();
     }
     catch (Exception e)
     {
@@ -120,9 +123,18 @@ await Parallel.ForEachAsync(sitesTags, new ParallelOptions{MaxDegreeOfParallelis
         return;
     }
 
-    var json = await response.Content.ReadAsStringAsync();
-
-    var data = JsonSerializer.Deserialize(json, CamelCaseJsonContext.Default.StatusResponseArray);
+    StatusResponse[]? data;
+    try
+    {
+        data = JsonSerializer.Deserialize(json, CamelCaseJsonContext.Default.StatusResponseArray);
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine($"Error deserializing the response when pulling #{tag} posts from {site}. Error: {e.Message}");
+        Console.WriteLine($"Got the following response while I expected json content: {json}");
+        return;
+    }
+    
     if (data == null)
     {
         Console.WriteLine($"Error deserializing the response when pulling #{tag} posts from {site}");
