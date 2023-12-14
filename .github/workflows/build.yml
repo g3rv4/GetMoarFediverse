@@ -19,7 +19,7 @@ jobs:
         shell: pwsh
         run: |
           $srcPath = Join-Path (Pwd) src
-          docker run -v "$($srcPath):/var/src" mcr.microsoft.com/dotnet/sdk:6.0.405-alpine3.16 ash -c "dotnet publish -r ${{ matrix.runtime }} --self-contained -p:PublishTrimmed=true -p:PublishSingleFile=true -c Release /var/src/GetMoarFediverse.csproj -o /var/output"
+          docker run -v "$($srcPath):/var/src" mcr.microsoft.com/dotnet/sdk:8.0.100-1-alpine3.18 ash -c "dotnet publish -r ${{ matrix.runtime }} --self-contained -p:PublishTrimmed=true -p:PublishSingleFile=true -c Release /var/src/GetMoarFediverse.csproj -o /var/output"
 
   build-docker:
     runs-on: ubuntu-latest
@@ -35,5 +35,6 @@ jobs:
           if ('${{ matrix.architecture }}' -eq 'arm64v8') {
             sudo apt-get install qemu binfmt-support qemu-user-static
             docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+            sed -i 's/8.0.100-1-alpine3.18/8.0.100-alpine3.18/' Dockerfile
           }
           docker build . --build-arg ARCH=${{ matrix.architecture }}
