@@ -39,7 +39,7 @@ jobs:
             tar -czf artifact/GetMoarFediverse_${{ matrix.runtime }}.tgz $zipDirectory
           }
           
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@master
         with:
           name: ${{ matrix.runtime }}
           path: artifact/*
