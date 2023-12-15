@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Net;
 using System.Text.Json;
 using GetMoarFediverse;
 using GetMoarFediverse.Configuration;
@@ -153,6 +154,7 @@ await Parallel.ForEachAsync(sitesTags, new ParallelOptions{MaxDegreeOfParallelis
 
 var statusesToLoad = statusesToLoadBag.ToHashSet();
 Console.WriteLine($"Originally retrieved {statusesToLoadBag.Count} statuses. After removing duplicates, I got {statusesToLoad.Count} really unique ones");
+var rateLimited = false;
 foreach (var statusLink in statusesToLoad)
 {
     Console.WriteLine($"Bringing in {statusLink}");
@@ -164,8 +166,21 @@ foreach (var statusLink in statusesToLoad)
         };
 
         var res = await authClient.PostAsync("index", new FormUrlEncodedContent(content));
+        if (res.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            // fakerelay.gervas.io has a token bucket rate limit of 30 tokens per minute, allowing bursts of up to
+            // 60 requests per minute. Once we hit a 429, we should do a request every 2 seconds. 
+            Console.WriteLine("Got a 429 from FakeRelay, waiting 2 second and retrying");
+            rateLimited = true;
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            res = await authClient.PostAsync("index", new FormUrlEncodedContent(content));
+        }
         res.EnsureSuccessStatusCode();
         importedList.Add(statusLink);
+        if (rateLimited)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(2));
+        }
     }
     catch (Exception e)
     {
