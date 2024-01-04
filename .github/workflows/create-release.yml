@@ -78,9 +78,6 @@ jobs:
   create-docker-image:
     runs-on: ubuntu-latest
     needs: [ create-release ]
-    strategy:
-      matrix:
-        architecture: [ amd64, arm64v8 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -94,19 +91,23 @@ jobs:
         shell: pwsh
         run: |
           $version = '${{ github.event.ref }}'.Replace('refs/tags/', '').Replace('v', '')
+          $packageUrl = "ghcr.io/${{ github.actor }}/${{ github.event.repository.name }}".ToLower()
 
-          if ('${{ matrix.architecture }}' -eq 'arm64v8') {
-            sudo apt-get install qemu binfmt-support qemu-user-static
-            docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-            sed -i 's/8.0.100-1-alpine3.18/8.0.100-alpine3.18/' Dockerfile
+          $archs = "amd64", "arm64v8"
+          foreach ($arch in $archs) {
+            docker build -t "$($packageUrl):latest-$($arch)" --build-arg ARCH=$($arch) .
+            docker tag "$($packageUrl):latest-$($arch)" "$($packageUrl):$($version)-$($arch)"
+            docker push "$($packageUrl):latest-$($arch)"
+            docker push "$($packageUrl):$($version)-$($arch)"
           }
 
-          docker build . -t ghcr.io/g3rv4/getmoarfediverse:latest-${{ matrix.architecture }} --build-arg ARCH=${{ matrix.architecture }}
-          docker tag ghcr.io/g3rv4/getmoarfediverse:latest-${{ matrix.architecture }} ghcr.io/g3rv4/getmoarfediverse:$version-${{ matrix.architecture }}
-          docker push ghcr.io/g3rv4/getmoarfediverse:latest-${{ matrix.architecture }}
-          docker push ghcr.io/g3rv4/getmoarfediverse:$version-${{ matrix.architecture }}
-
-          if ('${{ matrix.architecture }}' -eq 'amd64') {
-            docker tag ghcr.io/g3rv4/getmoarfediverse:latest-${{ matrix.architecture }} ghcr.io/g3rv4/getmoarfediverse:latest
-            docker push ghcr.io/g3rv4/getmoarfediverse:latest
-          }
+          docker manifest create `
+                "$($packageUrl):latest" `
+                --amend "$($packageUrl):latest-amd64" `
+                --amend "$($packageUrl):latest-arm64v8"
+          docker manifest create `
+                "$($packageUrl):$($version)" `
+                --amend "$($packageUrl):$($version)-amd64" `
+                --amend "$($packageUrl):$($version)-arm64v8"
+          docker manifest push "$($packageUrl):latest"
+          docker manifest push "$($packageUrl):$($version)"
