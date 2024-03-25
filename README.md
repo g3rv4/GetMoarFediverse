@@ -147,7 +147,3 @@ You can run it as a cron every 15 minutes, doing something like this:
 ```
 1,16,31,46 * * * * /usr/local/bin/docker-compose -f /path/to/GetMoarFediverse/docker-compose.yml run --rm importdata > /path/to/GetMoarFediverse/cron.log 2>&1
 ```
-
-### What about Docker on Windows?
-
-I'd recommend you use the executable... but if you really want to, you can run it on Docker on Windows and set up a scheduled task. You can watch [this demo by Jeff Lindborg](https://www.youtube.com/watch?v=v73ZKtP0rzE).
