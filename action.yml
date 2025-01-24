@@ -39,7 +39,7 @@ runs:
         ./GetMoarFediverse ${{ env.MOAR_TMP_DIR }}/config.json
       shell: bash
     - name: store artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: moar-imported
         path: ${{ env.MOAR_TMP_DIR }}/imported.txt
